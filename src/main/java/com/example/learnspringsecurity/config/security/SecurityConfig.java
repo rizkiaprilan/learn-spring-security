@@ -28,6 +28,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService userDetailsService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
+    private String[] permitLinkPath() {
+        return new String[]{"/api/login/**",
+                "/api/token/refresh/**",
+                "/swagger-ui/**",
+                "/v3/api-docs/**",
+                "/swagger-ui-security.html"};
+    }
+
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -41,14 +49,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
         http.csrf().disable();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        http.authorizeRequests().antMatchers("/api/login/**","/api/token/refresh/**").permitAll();
+        http.authorizeRequests().antMatchers(permitLinkPath()).permitAll();
         http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/user/**").hasAuthority("ROLE_USER");
         http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/user/save/**").hasAuthority("ROLE_ADMIN");
         http.authorizeRequests().anyRequest().authenticated();
         http.addFilter(customAuthenticationFilter);
         http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
-//        http.addFilter(new CustomAuthenticationFilter());
     }
+
 
     @Bean
     @Override
