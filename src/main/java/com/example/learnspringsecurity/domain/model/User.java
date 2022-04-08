@@ -3,14 +3,17 @@ package com.example.learnspringsecurity.domain.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
 import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * @author Muhammad Rezki Aprilan
- * @poject learn-spring-security
+ * @project learn-spring-security
  * @email muhammad.rezki@bankmandiri.co.id
  * @created 07/04/2022 - 09:48:13
  */
@@ -19,14 +22,28 @@ import java.util.Collection;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
+@Table(name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = "username"),
+                @UniqueConstraint(columnNames = "email")
+        }, indexes = {
+        @Index(name = "USER_INDX_0", columnList = "username"),
+        @Index(name = "USER_INDX_1", columnList = "email")
+})
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "user_id")
-    private Long id;
+    @GeneratedValue(generator = "hibernate-uuid", strategy = GenerationType.IDENTITY)
+    @GenericGenerator(name = "hibernate-uuid", strategy = "uuid2")
+    @Column(name = "user_id", nullable = false, updatable = false, unique = true)
+    private String id;
+    @Column(name = "name", nullable = false)
     private String name;
+    @Column(name = "username", unique = true)
     private String username;
+    @Email
+    @Column(name = "email", nullable = false,unique = true)
+    private String email;
+    @Column(name = "password",nullable = false)
     private String password;
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

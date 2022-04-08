@@ -4,13 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.util.Collection;
 
 /**
  * @author Muhammad Rezki Aprilan
- * @poject learn-spring-security
+ * @project learn-spring-security
  * @email muhammad.rezki@bankmandiri.co.id
  * @created 07/04/2022 - 09:54:48
  */
@@ -22,11 +23,11 @@ import java.util.Collection;
 @Table(name = "roles")
 public class Role {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "role_id")
-    private Long id;
-    private String name;
-//    @ManyToMany(mappedBy = "roles")
-//    @JsonIgnore
-//    Collection<User> users;
+    @GeneratedValue(generator = "hibernate-uuid", strategy = GenerationType.IDENTITY)
+    @GenericGenerator(name = "hibernate-uuid", strategy = "uuid2")
+    @Column(name = "role_id", nullable = false, updatable = false, unique = true)
+    private String id;
+    @Column(name = "role_name", nullable = false, unique = true)
+    private String roleName;
+
 }

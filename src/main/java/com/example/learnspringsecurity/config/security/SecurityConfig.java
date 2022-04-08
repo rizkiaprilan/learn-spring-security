@@ -16,7 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 /**
  * @author Muhammad Rezki Aprilan
- * @poject learn-spring-security
+ * @project learn-spring-security
  * @email muhammad.rezki@bankmandiri.co.id
  * @created 07/04/2022 - 12:08:30
  */
@@ -50,11 +50,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.csrf().disable();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeRequests().antMatchers(permitLinkPath()).permitAll();
+        http.authorizeRequests().antMatchers("/api/admin-only/**").hasAuthority("ROLE_ADMIN");
+        http.authorizeRequests().antMatchers("/api/user-only/**").hasAuthority("ROLE_USER");
         http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/user/**").hasAuthority("ROLE_USER");
         http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/user/save/**").hasAuthority("ROLE_ADMIN");
         http.authorizeRequests().anyRequest().authenticated();
-        http.addFilter(customAuthenticationFilter);
         http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilter(customAuthenticationFilter);
     }
 
 

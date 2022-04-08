@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * @author Muhammad Rezki Aprilan
- * @poject learn-spring-security
+ * @project learn-spring-security
  * @email muhammad.rezki@bankmandiri.co.id
  * @created 07/04/2022 - 10:14:05
  */

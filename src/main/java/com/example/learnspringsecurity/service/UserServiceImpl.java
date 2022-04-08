@@ -1,5 +1,6 @@
 package com.example.learnspringsecurity.service;
 
+import com.example.learnspringsecurity.config.exception.CustomForbiddenException;
 import com.example.learnspringsecurity.domain.model.Role;
 import com.example.learnspringsecurity.domain.model.User;
 import com.example.learnspringsecurity.repository.RoleRepository;
@@ -13,7 +14,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ObjectUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * @author Muhammad Rezki Aprilan
- * @poject learn-spring-security
+ * @project learn-spring-security
  * @email muhammad.rezki@bankmandiri.co.id
  * @created 07/04/2022 - 10:16:41
  */
@@ -38,18 +38,15 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-        if (ObjectUtils.isEmpty(user)) {
+        User user = userRepository.getDataByUsernameOrEmail(username).orElseThrow(() -> {
             log.error("User not found in database");
-            throw new UsernameNotFoundException("User not found in database");
-        }
+            throw new CustomForbiddenException("Failed to authenticated");
+        });
         log.info("User found in database: {}", username);
-//        Collection<SimpleGrantedAuthority> authorities = user.getRoles().stream().map(role -> new SimpleGrantedAuthority(role.getName())).collect(Collectors.toUnmodifiableSet());
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        user.getRoles().forEach(role -> authorities.add(new SimpleGrantedAuthority(role.getName())));
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), authorities);
+        user.getRoles().forEach(role -> authorities.add(new SimpleGrantedAuthority(role.getRoleName())));
+        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), authorities);
     }
-
 
     @Override
     public User saveUser(User user) {
@@ -60,22 +57,28 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public Role saveRole(Role role) {
-        log.info("Saving new role {} to the database", role.getName());
+        log.info("Saving new role {} to the database", role.getRoleName());
         return roleRepository.save(role);
     }
 
     @Override
-    public void addRoleToUser(String username, String rolename) {
-        log.info("Adding role {} to user {}", rolename, username);
-        User user = userRepository.findByUsername(username);
-        Role role = roleRepository.findByName(rolename);
+    public void addRoleToUser(String accountName, String roleName) {
+        log.info("Adding role {} to user {}", roleName, accountName);
+        User user = userRepository.getDataByUsernameOrEmail(accountName).orElseThrow(() -> {
+            log.error("User not found in database");
+            throw new CustomForbiddenException("Failed to authenticated");
+        });
+        Role role = roleRepository.findByRoleName(roleName);
         user.getRoles().add(role);
     }
 
     @Override
-    public User getUser(String username) {
-        log.info("Fetching user {}", username);
-        return userRepository.findByUsername(username);
+    public User getUser(String accountName) {
+        log.info("Fetching user {}", accountName);
+        return userRepository.getDataByUsernameOrEmail(accountName).orElseThrow(() -> {
+            log.error("User not found in database");
+            throw new CustomForbiddenException("Failed to authenticated");
+        });
     }
 
     @Override
