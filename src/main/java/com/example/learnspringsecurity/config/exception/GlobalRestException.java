@@ -78,7 +78,7 @@ public class GlobalRestException extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(CustomFileStorageException.class)
-    public ResponseEntity<RestResponse<Object>> handleResoureIsExisting(CustomFileStorageException e, HttpServletRequest request) {
+    public ResponseEntity<RestResponse<Object>> handleResourceIsExisting(CustomFileStorageException e, HttpServletRequest request) {
         RestResponse<Object> customErrorResponse = RestResponse
                 .builder()
                 .data(null)

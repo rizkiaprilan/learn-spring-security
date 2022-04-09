@@ -22,7 +22,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 
 /**
  * @author Muhammad Rezki Aprilan
@@ -54,7 +56,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 log.error("Error logging in: {}", exception.getMessage());
                 response.setStatus(HttpStatus.FORBIDDEN.value());
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                RestResponse<Object> restResponse = new RestResponse<>(exception.getMessage(),null);
+                RestResponse<Object> restResponse = new RestResponse<>(exception.getMessage(), null);
                 new ObjectMapper().writeValue(response.getOutputStream(), restResponse);
             }
         } else {

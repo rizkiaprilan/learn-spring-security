@@ -6,8 +6,6 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -40,7 +38,6 @@ public class User {
     private String name;
     @Column(name = "username", unique = true)
     private String username;
-    @Email
     @Column(name = "email", nullable = false,unique = true)
     private String email;
     @Column(name = "password",nullable = false)
