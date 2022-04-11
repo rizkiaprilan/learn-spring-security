@@ -6,6 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.learnspringsecurity.config.exception.CustomForbiddenException;
 import com.example.learnspringsecurity.domain.RestResponse;
+import com.example.learnspringsecurity.domain.dto.Login;
 import com.example.learnspringsecurity.domain.dto.RoleToUserForm;
 import com.example.learnspringsecurity.domain.model.Role;
 import com.example.learnspringsecurity.domain.model.User;
@@ -15,13 +16,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -50,6 +52,32 @@ public class UserController {
     @GetMapping("/users")
     public ResponseEntity<List<User>> getUsers() {
         return ResponseEntity.ok(userService.getUsers());
+    }
+
+    @PostMapping("/sign-in")
+    public ResponseEntity<Object> signIn(@RequestBody Login login) {
+        RestTemplate restTemplate = new RestTemplate();
+
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.add("username", login.getUsername());
+        map.add("password", login.getPassword());
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+
+        String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/login").toUriString();
+        ResponseEntity<Object> response = restTemplate.postForEntity(url, request, Object.class);
+        return ResponseEntity.ok(response.getBody());
+    }
+
+    @GetMapping("/sign-out")
+    public ResponseEntity<RestResponse<Object>> signOut(HttpServletResponse servletResponse) {
+        Cookie cookie = new Cookie(HttpHeaders.AUTHORIZATION,null);
+        cookie.setMaxAge(0);
+        servletResponse.addCookie(cookie);
+        return ResponseEntity.ok(new RestResponse<>("logout",null));
     }
 
     @GetMapping("/admin-only")
@@ -107,7 +135,7 @@ public class UserController {
                 log.error("Error logging in: {}", exception.getMessage());
                 servletResponse.setStatus(HttpStatus.FORBIDDEN.value());
                 servletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                RestResponse<Object> restResponse = new RestResponse<>(exception.getMessage(),null);
+                RestResponse<Object> restResponse = new RestResponse<>(exception.getMessage(), null);
                 new ObjectMapper().writeValue(servletResponse.getOutputStream(), restResponse);
             }
         } else {

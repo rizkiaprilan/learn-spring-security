@@ -23,7 +23,7 @@ import java.util.List;
 public class SwaggerConfig {
 
 
-    private ApiKey apiKey() {
+    private ApiKey jwtKey() {
         return new ApiKey("JWT", HttpHeaders.AUTHORIZATION, "header");
     }
 
@@ -45,7 +45,7 @@ public class SwaggerConfig {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
                 .securityContexts(Collections.singletonList(securityContext()))
-                .securitySchemes(Collections.singletonList(apiKey()))
+                .securitySchemes(Collections.singletonList(jwtKey()))
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("com.example.learnspringsecurity.controller"))
                 .paths(PathSelectors.any())
