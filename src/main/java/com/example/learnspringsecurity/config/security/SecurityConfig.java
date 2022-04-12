@@ -68,11 +68,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.csrf().disable();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeRequests().antMatchers(permitLinkPath()).permitAll();
-        http.authorizeRequests().antMatchers("/api/admin-only/**").hasAuthority("ROLE_ADMIN");
-        http.authorizeRequests().antMatchers("/api/user-only/**").hasAuthority("ROLE_USER");
+        http.authorizeRequests().antMatchers("/api/admin-only/**").hasAnyAuthority("ROLE_ADMIN");
+        http.authorizeRequests().antMatchers("/api/user-only/**").hasAnyAuthority("ROLE_USER");
         http.authorizeRequests().antMatchers("/api/user/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MANAGER","ROLE_SUPER_ADMIN");
-        http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/user/**").hasAuthority("ROLE_USER");
-        http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/user/save/**").hasAuthority("ROLE_ADMIN");
+        http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/user/**").hasAnyAuthority("ROLE_USER");
+        http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/user/save/**").hasAnyAuthority("ROLE_ADMIN");
         http.authorizeRequests().anyRequest().authenticated();
         http.exceptionHandling().accessDeniedHandler(customAccessDeniedHandler());
         http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
