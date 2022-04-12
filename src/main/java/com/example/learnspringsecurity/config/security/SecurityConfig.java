@@ -38,7 +38,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService userDetailsService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
-    private String[] permitLinkPath() {
+    public static String[] permitLinkPath() {
         return new String[]{
                 "/v2/api-docs",
                 "/configuration/ui",
@@ -70,6 +70,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.authorizeRequests().antMatchers(permitLinkPath()).permitAll();
         http.authorizeRequests().antMatchers("/api/admin-only/**").hasAuthority("ROLE_ADMIN");
         http.authorizeRequests().antMatchers("/api/user-only/**").hasAuthority("ROLE_USER");
+        http.authorizeRequests().antMatchers("/api/user/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MANAGER","ROLE_SUPER_ADMIN");
         http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/user/**").hasAuthority("ROLE_USER");
         http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/user/save/**").hasAuthority("ROLE_ADMIN");
         http.authorizeRequests().anyRequest().authenticated();

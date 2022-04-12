@@ -33,9 +33,12 @@ public class LearnSpringSecurityApplication {
             userService.saveRole(new Role(null, "ROLE_SUPER_ADMIN"));
 
             userService.saveUser(new User(null, "Rizki Aprilan", "rizkiaprilan","rizkiaprilan@gmail.com", "1234", new ArrayList<>()));
+            userService.saveUser(new User(null, "Nur Annisa", "nurannisa","nurannisa@gmail.com", "1234", new ArrayList<>()));
             userService.saveUser(new User(null, "Uzumaki Naruto", "narutoshippuden","narutoshippuden@gmail.com", "12345", new ArrayList<>()));
             userService.saveUser(new User(null, "Sasuke Uchiha", "sasukeshippuden","sasukeshippuden@gmail.com", "123456", new ArrayList<>()));
             userService.saveUser(new User(null, "Haruno Sakura", "sakurashippuden","sakurashippuden@gmail.com", "1234567", new ArrayList<>()));
+
+            userService.addRoleToUser("nurannisa", "ROLE_USER");
 
             userService.addRoleToUser("rizkiaprilan", "ROLE_USER");
             userService.addRoleToUser("rizkiaprilan", "ROLE_MANAGER");

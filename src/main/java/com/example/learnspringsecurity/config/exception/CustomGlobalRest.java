@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 
 @Slf4j
 @RestControllerAdvice
-public class GlobalRestException extends ResponseEntityExceptionHandler {
+public class CustomGlobalRest extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<RestResponse<Object>> handleInternalServerError(Exception e, HttpServletRequest request) {
@@ -64,10 +64,7 @@ public class GlobalRestException extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(customErrorResponse, HttpStatus.UNAUTHORIZED);
     }
 
-    /**
-     * global forbidden existing
-     ***/
-    @ExceptionHandler(CustomForbiddenException.class)
+    @ExceptionHandler(value = {CustomForbiddenException.class})
     public ResponseEntity<RestResponse<Object>> handleForbidden(CustomForbiddenException e, HttpServletRequest request) {
         RestResponse<Object> customErrorResponse = RestResponse
                 .builder()

@@ -38,9 +38,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.getDataByUsernameOrEmail(username).orElseThrow(() -> {
+        User user = userRepository.getDataByUsernameOrEmailOptional(username).orElseThrow(() -> {
             log.error("User not found in database");
-            throw new CustomForbiddenException("Failed to authenticated");
+            throw new CustomForbiddenException("User not found in database");
         });
         log.info("User found in database: {}", username);
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
@@ -64,9 +64,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Override
     public void addRoleToUser(String accountName, String roleName) {
         log.info("Adding role {} to user {}", roleName, accountName);
-        User user = userRepository.getDataByUsernameOrEmail(accountName).orElseThrow(() -> {
+        User user = userRepository.getDataByUsernameOrEmailOptional(accountName).orElseThrow(() -> {
             log.error("User not found in database");
-            throw new CustomForbiddenException("Failed to authenticated");
+            throw new CustomForbiddenException("User not found in database");
         });
         Role role = roleRepository.findByRoleName(roleName);
         user.getRoles().add(role);
@@ -75,9 +75,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Override
     public User getUser(String accountName) {
         log.info("Fetching user {}", accountName);
-        return userRepository.getDataByUsernameOrEmail(accountName).orElseThrow(() -> {
+        return userRepository.getDataByUsernameOrEmailOptional(accountName).orElseThrow(() -> {
             log.error("User not found in database");
-            throw new CustomForbiddenException("Failed to authenticated");
+            throw new CustomForbiddenException("User not found in database");
         });
     }
 

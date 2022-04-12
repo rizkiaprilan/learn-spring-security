@@ -34,10 +34,17 @@ import java.util.Collection;
  */
 @Slf4j
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (ObjectUtils.isNotEmpty(authorizationHeader) && authorizationHeader.startsWith("Bearer ") && !request.getServletPath().equals("/api/token/refresh")) {
+        if (Arrays.stream(SecurityConfig.permitLinkPath()).anyMatch(s -> request.getServletPath().contains(s.replaceAll("/\\*\\*", "")))) {
+            filterChain.doFilter(request, response);
+        } else {
+            String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+            if (ObjectUtils.isEmpty(authorizationHeader)) {
+                validationResponse(response, "Authorization header is required", HttpStatus.BAD_REQUEST);
+                return;
+            }
             try {
                 String token = authorizationHeader.substring("Bearer ".length());
                 Algorithm algorithm = Algorithm.HMAC256(Constants.JWT_SECRET);
@@ -53,14 +60,16 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
                 filterChain.doFilter(request, response);
             } catch (Exception exception) {
-                log.error("Error logging in: {}", exception.getMessage());
-                response.setStatus(HttpStatus.FORBIDDEN.value());
-                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                RestResponse<Object> restResponse = new RestResponse<>(exception.getMessage(), null);
-                new ObjectMapper().writeValue(response.getOutputStream(), restResponse);
+                validationResponse(response, exception.getMessage(), HttpStatus.FORBIDDEN);
             }
-        } else {
-            filterChain.doFilter(request, response);
         }
+    }
+
+    private void validationResponse(HttpServletResponse response, String error, HttpStatus httpStatus) throws IOException {
+        log.error("Error logging in: {}", error);
+        response.setStatus(httpStatus.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        RestResponse<Object> restResponse = new RestResponse<>(error, null);
+        new ObjectMapper().writeValue(response.getOutputStream(), restResponse);
     }
 }

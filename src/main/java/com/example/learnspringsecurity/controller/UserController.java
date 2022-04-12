@@ -54,10 +54,14 @@ public class UserController {
         return ResponseEntity.ok(userService.getUsers());
     }
 
+    @GetMapping("/user/{accountName}")
+    public ResponseEntity<User> getUser(@PathVariable("accountName") String accountName) {
+        return ResponseEntity.ok(userService.getUser(accountName));
+    }
+
     @PostMapping("/sign-in")
     public ResponseEntity<Object> signIn(@RequestBody Login login) {
         RestTemplate restTemplate = new RestTemplate();
-
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -132,14 +136,19 @@ public class UserController {
                 servletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
                 new ObjectMapper().writeValue(servletResponse.getOutputStream(), tokens);
             } catch (Exception exception) {
-                log.error("Error logging in: {}", exception.getMessage());
+                log.error("Error : {}", exception.getMessage());
                 servletResponse.setStatus(HttpStatus.FORBIDDEN.value());
                 servletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
                 RestResponse<Object> restResponse = new RestResponse<>(exception.getMessage(), null);
                 new ObjectMapper().writeValue(servletResponse.getOutputStream(), restResponse);
             }
         } else {
-            throw new CustomForbiddenException("Refresh token is missing");
+            String error = "Authorization refresh token is required";
+            log.error("Error : {}", error);
+            servletResponse.setStatus(HttpStatus.BAD_REQUEST.value());
+            servletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            RestResponse<Object> restResponse = new RestResponse<>(error, null);
+            new ObjectMapper().writeValue(servletResponse.getOutputStream(), restResponse);
         }
     }
 }

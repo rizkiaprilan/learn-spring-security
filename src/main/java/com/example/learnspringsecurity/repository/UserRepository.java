@@ -18,5 +18,5 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     @Query(value = "select * from users where (LOWER(username)=LOWER(:accountName) or LOWER(email)= LOWER(:accountName));", nativeQuery = true)
-    Optional<User> getDataByUsernameOrEmail(@Param("accountName") String accountName);
+    Optional<User> getDataByUsernameOrEmailOptional(@Param("accountName") String accountName);
 }

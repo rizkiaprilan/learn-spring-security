@@ -2,6 +2,7 @@ package com.example.learnspringsecurity.config.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.example.learnspringsecurity.config.exception.CustomForbiddenException;
 import com.example.learnspringsecurity.domain.RestResponse;
 import com.example.learnspringsecurity.utils.Constants;
 import com.fasterxml.jackson.databind.ObjectMapper;
