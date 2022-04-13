@@ -1,13 +1,14 @@
 package com.example.learnspringsecurity.config.security;
 
 import com.example.learnspringsecurity.domain.RestResponse;
+import com.example.learnspringsecurity.domain.model.Permission;
+import com.example.learnspringsecurity.domain.model.Role;
+import com.example.learnspringsecurity.service.PermissionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,10 +19,12 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import javax.servlet.http.Cookie;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Muhammad Rezki Aprilan
@@ -37,6 +40,7 @@ import javax.servlet.http.Cookie;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService userDetailsService;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final PermissionService permissionService;
 
     public static String[] permitLinkPath() {
         return new String[]{
@@ -54,7 +58,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/api/token/refresh/**"};
     }
 
-
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService).passwordEncoder(bCryptPasswordEncoder);
@@ -62,17 +65,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        List<Permission> permissions = permissionService.getPermissions();
         CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(authenticationManagerBean());
         customAuthenticationFilter.setFilterProcessesUrl("/api/login"); // custom path login
 
         http.csrf().disable();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeRequests().antMatchers(permitLinkPath()).permitAll();
-        http.authorizeRequests().antMatchers("/api/admin-only/**").hasAnyAuthority("ROLE_ADMIN");
-        http.authorizeRequests().antMatchers("/api/user-only/**").hasAnyAuthority("ROLE_USER");
-        http.authorizeRequests().antMatchers("/api/user/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MANAGER","ROLE_SUPER_ADMIN");
-        http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/user/**").hasAnyAuthority("ROLE_USER");
-        http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/user/save/**").hasAnyAuthority("ROLE_ADMIN");
+        // Flow : spring security -> get db, soon insert data first after that run springboot
+        permissions.forEach(permission -> {
+            List<String> roles = permission.getRoles().stream().map(Role::getRoleName).collect(Collectors.toList());
+            try {
+                http.authorizeRequests().antMatchers(permission.getHttpMethod(), permission.getPath()).hasAnyAuthority(roles.toArray(String[]::new));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
         http.authorizeRequests().anyRequest().authenticated();
         http.exceptionHandling().accessDeniedHandler(customAccessDeniedHandler());
         http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);

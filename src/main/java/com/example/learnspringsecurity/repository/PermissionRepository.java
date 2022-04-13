@@ -1,5 +1,6 @@
 package com.example.learnspringsecurity.repository;
 
+import com.example.learnspringsecurity.domain.model.Permission;
 import com.example.learnspringsecurity.domain.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,7 +17,5 @@ import java.util.Optional;
  */
 
 @Repository
-public interface UserRepository extends JpaRepository<User, String> {
-    @Query(value = "select * from users where (LOWER(username)=LOWER(:accountName) or LOWER(email)= LOWER(:accountName));", nativeQuery = true)
-    Optional<User> getDataByUsernameOrEmailOptional(@Param("accountName") String accountName);
+public interface PermissionRepository extends JpaRepository<Permission, String> {
 }
