@@ -1,22 +1,20 @@
 package com.example.learnspringsecurity.controller;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.example.learnspringsecurity.config.exception.CustomForbiddenException;
-import com.example.learnspringsecurity.domain.RestResponse;
-import com.example.learnspringsecurity.domain.dto.Login;
-import com.example.learnspringsecurity.domain.dto.RoleToUserForm;
+import com.example.learnspringsecurity.domain.common.EmptyRequest;
+import com.example.learnspringsecurity.domain.common.RestResponse;
 import com.example.learnspringsecurity.domain.model.Role;
 import com.example.learnspringsecurity.domain.model.User;
+import com.example.learnspringsecurity.domain.request.AddRoleToUserRequest;
+import com.example.learnspringsecurity.domain.request.LoginRequest;
+import com.example.learnspringsecurity.domain.response.TokensResponse;
+import com.example.learnspringsecurity.service.RefreshTokenService;
 import com.example.learnspringsecurity.service.UserService;
-import com.example.learnspringsecurity.utils.Constants;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
@@ -26,14 +24,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.net.URI;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * @author Muhammad Rezki Aprilan
@@ -47,7 +41,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @RequestMapping("/api")
 public class UserController {
+
     private final UserService userService;
+    private final RefreshTokenService refreshTokenService;
 
     @GetMapping("/users")
     public ResponseEntity<List<User>> getUsers() {
@@ -60,28 +56,33 @@ public class UserController {
     }
 
     @PostMapping("/sign-in")
-    public ResponseEntity<Object> signIn(@RequestBody Login login) {
+    public ResponseEntity<Object> signIn(@RequestBody LoginRequest loginRequest, HttpServletResponse servletResponse) {
         RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-        map.add("username", login.getUsername());
-        map.add("password", login.getPassword());
+        map.add("username", loginRequest.getUsername());
+        map.add("password", loginRequest.getPassword());
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
 
         String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/login").toUriString();
-        ResponseEntity<Object> response = restTemplate.postForEntity(url, request, Object.class);
-        return ResponseEntity.ok(response.getBody());
+        RestResponse<LinkedHashMap<String, String>> response = restTemplate.postForObject(url, request, RestResponse.class);
+
+        Cookie cookie = new Cookie(HttpHeaders.AUTHORIZATION, response.getData().get("accessToken"));
+        cookie.setMaxAge((int) TimeUnit.MINUTES.toSeconds(10));
+        servletResponse.addCookie(cookie);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/sign-out")
     public ResponseEntity<RestResponse<Object>> signOut(HttpServletResponse servletResponse) {
-        Cookie cookie = new Cookie(HttpHeaders.AUTHORIZATION,null);
+        Cookie cookie = new Cookie(HttpHeaders.AUTHORIZATION, null);
         cookie.setMaxAge(0);
         servletResponse.addCookie(cookie);
-        return ResponseEntity.ok(new RestResponse<>("logout",null));
+        return ResponseEntity.ok(new RestResponse<>(true, "logout", null));
     }
 
     @GetMapping("/admin-only")
@@ -107,48 +108,16 @@ public class UserController {
     }
 
     @PostMapping("/role/addtouser")
-    public ResponseEntity<?> addRoleToUser(@RequestBody RoleToUserForm form) {
+    public ResponseEntity<?> addRoleToUser(@RequestBody AddRoleToUserRequest form) {
         userService.addRoleToUser(form.getUsername(), form.getRolename());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/token/refresh")
-    public void refreshToken(HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws IOException {
-        String authorizationHeader = servletRequest.getHeader(HttpHeaders.AUTHORIZATION);
-        if (ObjectUtils.isNotEmpty(authorizationHeader) && authorizationHeader.startsWith("Bearer ")) {
-            try {
-                String refreshToken = authorizationHeader.substring("Bearer ".length());
-                Algorithm algorithm = Algorithm.HMAC256(Constants.JWT_SECRET);
-                JWTVerifier jwtVerifier = JWT.require(algorithm).build();
-                DecodedJWT decodedJWT = jwtVerifier.verify(refreshToken);
-                String username = decodedJWT.getSubject();
-                User user = userService.getUser(username);
-
-                String accessToken = JWT.create()
-                        .withSubject(user.getEmail())
-                        .withExpiresAt(new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(10)))
-                        .withIssuer(servletRequest.getRequestURL().toString())
-                        .withClaim(Constants.ROLES, user.getRoles().stream().map(Role::getRoleName).collect(Collectors.toList()))
-                        .sign(algorithm);
-                Map<String, String> tokens = new HashMap<>();
-                tokens.put(Constants.ACCESS_TOKEN, accessToken);
-                tokens.put(Constants.REFRESH_TOKEN, refreshToken);
-                servletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                new ObjectMapper().writeValue(servletResponse.getOutputStream(), tokens);
-            } catch (Exception exception) {
-                log.error("Error : {}", exception.getMessage());
-                servletResponse.setStatus(HttpStatus.FORBIDDEN.value());
-                servletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                RestResponse<Object> restResponse = new RestResponse<>(exception.getMessage(), null);
-                new ObjectMapper().writeValue(servletResponse.getOutputStream(), restResponse);
-            }
-        } else {
-            String error = "Authorization refresh token is required";
-            log.error("Error : {}", error);
-            servletResponse.setStatus(HttpStatus.BAD_REQUEST.value());
-            servletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            RestResponse<Object> restResponse = new RestResponse<>(error, null);
-            new ObjectMapper().writeValue(servletResponse.getOutputStream(), restResponse);
-        }
+    public ResponseEntity<TokensResponse> refreshToken(HttpServletRequest servletRequest) {
+        EmptyRequest request = new EmptyRequest();
+        request.setServletRequest(servletRequest);
+        TokensResponse tokensResponse = refreshTokenService.execute(new EmptyRequest());
+        return ResponseEntity.ok(tokensResponse);
     }
 }

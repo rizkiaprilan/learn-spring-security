@@ -1,5 +1,6 @@
-package com.example.learnspringsecurity.domain.dto;
+package com.example.learnspringsecurity.domain.request;
 
+import com.example.learnspringsecurity.domain.common.BaseRequest;
 import lombok.Data;
 
 /**
@@ -9,7 +10,7 @@ import lombok.Data;
  * @created 07/04/2022 - 11:30:01
  */
 @Data
-public class RoleToUserForm {
+public class AddRoleToUserRequest extends BaseRequest {
     private String username;
     private String rolename;
 }

@@ -2,8 +2,8 @@ package com.example.learnspringsecurity.config.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.example.learnspringsecurity.config.exception.CustomForbiddenException;
-import com.example.learnspringsecurity.domain.RestResponse;
+import com.example.learnspringsecurity.domain.common.RestResponse;
+import com.example.learnspringsecurity.domain.response.TokensResponse;
 import com.example.learnspringsecurity.utils.Constants;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.FilterChain;
 import javax.servlet.http.Cookie;
@@ -67,23 +66,16 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
                 .withIssuer(request.getRequestURL().toString())
                 .sign(algorithm);
 
-        Cookie cookie = new Cookie(HttpHeaders.AUTHORIZATION, accessToken);
-        cookie.setPath(request.getServletPath());
-        cookie.setMaxAge((int) TimeUnit.MINUTES.toSeconds(10));
-        response.addCookie(cookie);
-
-        Map<String, String> tokens = new HashMap<>();
-        tokens.put(Constants.ACCESS_TOKEN, accessToken);
-        tokens.put(Constants.REFRESH_TOKEN, refreshToken);
+        TokensResponse tokensResponse = new TokensResponse(accessToken, refreshToken);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        RestResponse<Map<String, String>> restResponse = new RestResponse<>("authenticated", tokens);
+        RestResponse<TokensResponse> restResponse = new RestResponse<>(true, "authenticated", tokensResponse);
         new ObjectMapper().writeValue(response.getOutputStream(), restResponse);
     }
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        RestResponse<Object> restResponse = new RestResponse<>(failed.getMessage(), null);
+        RestResponse<Object> restResponse = new RestResponse<>(false, failed.getMessage(), null);
         new ObjectMapper().writeValue(response.getOutputStream(), restResponse);
     }
 }

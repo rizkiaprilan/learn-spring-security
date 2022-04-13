@@ -4,9 +4,10 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.example.learnspringsecurity.domain.RestResponse;
+import com.example.learnspringsecurity.domain.common.RestResponse;
 import com.example.learnspringsecurity.utils.Constants;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.http.HttpHeaders;
@@ -36,7 +37,7 @@ import java.util.Collection;
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
         if (Arrays.stream(SecurityConfig.permitLinkPath()).anyMatch(s -> request.getServletPath().contains(s.replaceAll("/\\*\\*", "")))) {
             filterChain.doFilter(request, response);
         } else {
@@ -46,7 +47,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 return;
             }
             try {
-                String token = authorizationHeader.substring("Bearer ".length());
+                String token = authorizationHeader.substring(Constants.BEARER.length());
                 Algorithm algorithm = Algorithm.HMAC256(Constants.JWT_SECRET);
                 JWTVerifier jwtVerifier = JWT.require(algorithm).build();
                 DecodedJWT decodedJWT = jwtVerifier.verify(token);
@@ -69,7 +70,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
         log.error("Error logging in: {}", error);
         response.setStatus(httpStatus.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        RestResponse<Object> restResponse = new RestResponse<>(error, null);
+        RestResponse<Object> restResponse = new RestResponse<>(false, error, null);
         new ObjectMapper().writeValue(response.getOutputStream(), restResponse);
     }
 }

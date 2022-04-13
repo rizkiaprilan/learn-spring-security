@@ -1,6 +1,6 @@
 package com.example.learnspringsecurity.config.security;
 
-import com.example.learnspringsecurity.domain.RestResponse;
+import com.example.learnspringsecurity.domain.common.RestResponse;
 import com.example.learnspringsecurity.domain.model.Permission;
 import com.example.learnspringsecurity.domain.model.Role;
 import com.example.learnspringsecurity.service.PermissionService;
@@ -19,7 +19,6 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -92,7 +91,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             log.error("Error logging in: {}", accessDeniedException.getMessage());
             response.setStatus(HttpStatus.FORBIDDEN.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            RestResponse<Object> restResponse = new RestResponse<>(accessDeniedException.getMessage(), null);
+            RestResponse<Object> restResponse = new RestResponse<>(false, accessDeniedException.getMessage(), null);
             new ObjectMapper().writeValue(response.getOutputStream(), restResponse);
         };
     }

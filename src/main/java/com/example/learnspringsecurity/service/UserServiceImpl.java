@@ -1,10 +1,12 @@
 package com.example.learnspringsecurity.service;
 
 import com.example.learnspringsecurity.config.exception.CustomForbiddenException;
+import com.example.learnspringsecurity.config.exception.CustomResourceNotfoundException;
 import com.example.learnspringsecurity.domain.model.Role;
 import com.example.learnspringsecurity.domain.model.User;
 import com.example.learnspringsecurity.repository.RoleRepository;
 import com.example.learnspringsecurity.repository.UserRepository;
+import com.example.learnspringsecurity.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -31,6 +33,7 @@ import java.util.List;
 @Transactional
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService, UserDetailsService {
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -39,8 +42,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.getDataByUsernameOrEmailOptional(username).orElseThrow(() -> {
-            log.error("User not found in database");
-            throw new CustomForbiddenException("User not found in database");
+            log.error(Constants.ERR_MSG_USER_NOT_FOUND);
+            throw new CustomForbiddenException("User unidentified in database");
         });
         log.info("User found in database: {}", username);
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
@@ -65,8 +68,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public void addRoleToUser(String accountName, String roleName) {
         log.info("Adding role {} to user {}", roleName, accountName);
         User user = userRepository.getDataByUsernameOrEmailOptional(accountName).orElseThrow(() -> {
-            log.error("User not found in database");
-            throw new CustomForbiddenException("User not found in database");
+            log.error(Constants.ERR_MSG_USER_NOT_FOUND);
+            throw new CustomResourceNotfoundException(Constants.ERR_MSG_USER_NOT_FOUND);
         });
         Role role = roleRepository.findByRoleName(roleName);
         user.getRoles().add(role);
@@ -76,8 +79,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public User getUser(String accountName) {
         log.info("Fetching user {}", accountName);
         return userRepository.getDataByUsernameOrEmailOptional(accountName).orElseThrow(() -> {
-            log.error("User not found in database");
-            throw new CustomForbiddenException("User not found in database");
+            log.error(Constants.ERR_MSG_USER_NOT_FOUND);
+            throw new CustomResourceNotfoundException(Constants.ERR_MSG_USER_NOT_FOUND);
         });
     }
 

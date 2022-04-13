@@ -1,5 +1,6 @@
-package com.example.learnspringsecurity.domain.dto;
+package com.example.learnspringsecurity.domain.request;
 
+import com.example.learnspringsecurity.domain.common.BaseRequest;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Login {
+public class LoginRequest extends BaseRequest {
     private String username;
     private String password;
 }
