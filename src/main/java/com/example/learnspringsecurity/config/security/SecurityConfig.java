@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -72,14 +73,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeRequests().antMatchers(permitLinkPath()).permitAll();
         // Flow : spring security -> get db, soon insert data first after that run springboot
-        permissions.forEach(permission -> {
+        Flux<Permission> permissionFlux = Flux.fromIterable(permissions);
+        permissionFlux.subscribe(permission -> {
             List<String> roles = permission.getRoles().stream().map(Role::getRoleName).collect(Collectors.toList());
             try {
                 http.authorizeRequests().antMatchers(permission.getHttpMethod(), permission.getPath()).hasAnyAuthority(roles.toArray(String[]::new));
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Something error : {}", e.getMessage());
             }
-        });
+        }, throwable -> log.error("Failed get permission because : {}", throwable.getMessage()), () -> log.info("Config authorize API is completed"));
         http.authorizeRequests().anyRequest().authenticated();
         http.exceptionHandling().accessDeniedHandler(customAccessDeniedHandler());
         http.addFilterBefore(new CustomAuthorizationFilter(), UsernamePasswordAuthenticationFilter.class);
